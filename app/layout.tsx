@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'PNG图片绿幕处理',
+  description: '给PNG图片添加各种颜色的绿幕',
+  generator: 'fork25',
 }
 
 export default function RootLayout({
