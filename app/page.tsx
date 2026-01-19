@@ -1,7 +1,7 @@
 "use client"
 
-import Component from "../png-batch-processor"
+import ImageProcessor from "@/components/image-processor"
 
 export default function Page() {
-  return <Component />
+  return <ImageProcessor />
 }

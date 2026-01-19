@@ -4,7 +4,6 @@ import './globals.css'
 export const metadata: Metadata = {
   title: 'PNG图片绿幕处理',
   description: '给PNG图片添加各种颜色的绿幕',
-  generator: 'fork25',
 }
 
 export default function RootLayout({
