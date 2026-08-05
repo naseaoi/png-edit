@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'PNG 批量处理',
-  description: '批量填充 PNG 背景并设置边距与透明边框',
+  title: '图片批量处理',
+  description: '在浏览器中批量调整、压缩和处理 PNG、JPG 与 WebP 图片',
 }
 
 export default function RootLayout({

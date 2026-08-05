@@ -48,11 +48,20 @@ export const BatchToolbar = ({
       <div className="batch-summary">
         <div>
           <h2 className="font-display text-base font-semibold">任务队列</h2>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-neutral-600">
             {completedCount} / {totalCount} 已完成
           </p>
         </div>
-        <span className="format-chip">{pendingCount > 0 ? `${pendingCount} 待处理` : "全部完成"}</span>
+        {processing ? (
+          <div className="processing-status" aria-live="polite">
+            <span>处理进度 {progress.completed}/{progress.total}</span>
+            <Progress aria-label="处理进度" value={progressValue} className="h-1" />
+          </div>
+        ) : (
+          <span className="format-chip">
+            {pendingCount > 0 ? `${pendingCount} 待处理` : "全部完成"}
+          </span>
+        )}
       </div>
 
       <div className="batch-actions">
@@ -108,17 +117,6 @@ export const BatchToolbar = ({
         </Tooltip>
       </div>
 
-      {processing && (
-        <div className="col-span-full mt-3">
-          <div className="mb-1 flex justify-between text-xs text-slate-600">
-            <span>处理中</span>
-            <span className="font-mono">
-              {progress.completed}/{progress.total}
-            </span>
-          </div>
-          <Progress aria-label="处理进度" value={progressValue} className="h-2" />
-        </div>
-      )}
     </section>
   )
 }

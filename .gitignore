@@ -5,6 +5,7 @@
 /.pnpm-store/
 /.corepack/
 /.tmp/
+/.chrome-codex/
 
 # next.js
 /.next/

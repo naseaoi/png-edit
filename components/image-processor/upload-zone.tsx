@@ -90,8 +90,8 @@ export const UploadZone = ({ disabled, onFiles, onError }: UploadZoneProps) => {
         <Upload />
       </div>
       <div className="min-w-0 flex-1">
-        <h2 className="font-display text-base font-semibold text-slate-900">导入 PNG</h2>
-        <p className="mt-1 text-sm text-slate-600">拖放图片或文件夹到窗口任意位置</p>
+        <h2 className="font-display text-base font-semibold text-neutral-950">导入图片</h2>
+        <p className="mt-1 text-sm text-neutral-600">支持 PNG、JPG、WebP，或拖放文件夹</p>
       </div>
       <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
         <Button
@@ -116,7 +116,7 @@ export const UploadZone = ({ disabled, onFiles, onError }: UploadZoneProps) => {
         ref={fileInputRef}
         className="hidden"
         type="file"
-        accept=".png,image/png"
+        accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
         multiple
         aria-hidden="true"
         tabIndex={-1}
@@ -131,7 +131,7 @@ export const UploadZone = ({ disabled, onFiles, onError }: UploadZoneProps) => {
         ref={folderInputRef}
         className="hidden"
         type="file"
-        accept=".png,image/png"
+        accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
         multiple
         aria-hidden="true"
         tabIndex={-1}

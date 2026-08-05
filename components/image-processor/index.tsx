@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { ImageIcon } from "lucide-react"
+import appIcon from "@/app/icon.png"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,19 +32,23 @@ export default function ImageProcessor() {
 
   return (
     <TooltipProvider delayDuration={250}>
-      <div className="min-h-screen bg-background text-slate-900">
+      <div className="min-h-screen bg-background text-neutral-950">
         <header className="app-header">
           <div className="app-shell flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="app-mark" aria-hidden="true">
-                PNG
-              </div>
+              <Image
+                src={appIcon}
+                alt=""
+                className="app-icon"
+                priority
+                aria-hidden="true"
+              />
               <div className="min-w-0">
-                <h1 className="font-display truncate text-lg font-semibold">PNG 批量处理</h1>
-                <p className="text-xs text-slate-500">背景填充、边距与透明边框</p>
+                <h1 className="font-display truncate text-lg font-semibold">图片批量处理</h1>
+                <p className="text-xs text-neutral-500">尺寸、压缩、背景与边距</p>
               </div>
             </div>
-            <span className="format-chip shrink-0">JPG / PNG</span>
+            <span className="format-chip shrink-0">PNG / JPG / WEBP</span>
           </div>
         </header>
 
@@ -67,12 +73,15 @@ export default function ImageProcessor() {
                 customColor={settings.customColor}
                 syncMargin={settings.syncMargin}
                 disabled={processor.processing}
+                onBackgroundEnabled={settings.setBackgroundEnabled}
                 onPresetColor={settings.selectPresetColor}
                 onCustomColor={settings.selectCustomColor}
+                onMarginEnabled={settings.setMarginEnabled}
                 onMarginValue={settings.setMarginValue}
                 onTransparentBorder={settings.setTransparentBorder}
                 onToggleMarginSync={settings.toggleMarginSync}
-                onJpegQuality={settings.setJpegQuality}
+                onResizeValue={settings.setResizeValue}
+                onCompressionValue={settings.setCompressionValue}
               />
 
               <section className="min-w-0" aria-label="图片任务">

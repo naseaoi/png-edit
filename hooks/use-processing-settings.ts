@@ -1,33 +1,62 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { normalizeMarginConfig } from "@/lib/image-processing"
-import type { MarginConfig, ProcessingConfig } from "@/types"
+import {
+  normalizeMarginConfig,
+  normalizeResizeConfig,
+} from "@/lib/image-processing"
+import { useModulePreferences } from "@/hooks/use-module-preferences"
+import type {
+  CompressionConfig,
+  MarginConfig,
+  ProcessingConfig,
+  ResizeConfig,
+} from "@/types"
 
 const DEFAULT_MARGIN: MarginConfig = {
+  enabled: false,
   top: 0,
   right: 0,
   bottom: 0,
   left: 0,
 }
 
+const DEFAULT_COMPRESSION: CompressionConfig = {
+  enabled: false,
+  quality: 90,
+}
+
+const DEFAULT_RESIZE: ResizeConfig = {
+  enabled: false,
+  mode: "scale",
+  scalePercent: 50,
+  width: 1920,
+  height: 1080,
+  preserveAspectRatio: true,
+}
+
 export const useProcessingSettings = () => {
+  const { preferences, setModuleEnabled } = useModulePreferences()
   const [selectedColor, setSelectedColor] = useState<string | null>("#00FF00")
   const [customColor, setCustomColor] = useState("#00FF00")
   const [margin, setMargin] = useState(DEFAULT_MARGIN)
-  const [transparentBorder, setTransparentBorder] = useState(false)
   const [syncMargin, setSyncMargin] = useState(false)
-  const [jpegQuality, setJpegQuality] = useState(0.9)
+  const [resize, setResize] = useState(DEFAULT_RESIZE)
+  const [compression, setCompression] = useState(DEFAULT_COMPRESSION)
   const backgroundColor = selectedColor ?? customColor
 
   const config = useMemo<ProcessingConfig>(
     () => ({
-      backgroundColor,
-      margin,
-      transparentBorder,
-      jpegQuality,
+      background: {
+        enabled: preferences.background,
+        color: backgroundColor,
+      },
+      margin: { ...margin, enabled: preferences.margin },
+      transparentBorder: preferences.transparency,
+      resize: { ...resize, enabled: preferences.resize },
+      compression: { ...compression, enabled: preferences.compression },
     }),
-    [backgroundColor, jpegQuality, margin, transparentBorder],
+    [backgroundColor, compression, margin, preferences, resize],
   )
 
   const selectPresetColor = (color: string) => {
@@ -39,7 +68,10 @@ export const useProcessingSettings = () => {
     setSelectedColor(null)
   }
 
-  const setMarginValue = (field: keyof MarginConfig, value: number) => {
+  const setMarginValue = (
+    field: Exclude<keyof MarginConfig, "enabled">,
+    value: number,
+  ) => {
     setMargin((current) => {
       if (syncMargin) {
         return normalizeMarginConfig({
@@ -69,6 +101,30 @@ export const useProcessingSettings = () => {
     })
   }
 
+  const setResizeValue = <K extends keyof ResizeConfig>(
+    field: K,
+    value: ResizeConfig[K],
+  ) => {
+    if (field === "enabled") {
+      setModuleEnabled("resize", Boolean(value))
+      return
+    }
+    setResize((current) =>
+      normalizeResizeConfig({ ...current, [field]: value }),
+    )
+  }
+
+  const setCompressionValue = <K extends keyof CompressionConfig>(
+    field: K,
+    value: CompressionConfig[K],
+  ) => {
+    if (field === "enabled") {
+      setModuleEnabled("compression", Boolean(value))
+      return
+    }
+    setCompression((current) => ({ ...current, [field]: value }))
+  }
+
   return {
     config,
     selectedColor,
@@ -76,9 +132,14 @@ export const useProcessingSettings = () => {
     syncMargin,
     selectPresetColor,
     selectCustomColor,
+    setBackgroundEnabled: (enabled: boolean) =>
+      setModuleEnabled("background", enabled),
     setMarginValue,
-    setTransparentBorder,
+    setMarginEnabled: (enabled: boolean) => setModuleEnabled("margin", enabled),
+    setTransparentBorder: (enabled: boolean) =>
+      setModuleEnabled("transparency", enabled),
     toggleMarginSync,
-    setJpegQuality,
+    setResizeValue,
+    setCompressionValue,
   }
 }

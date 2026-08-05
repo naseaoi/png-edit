@@ -8,7 +8,7 @@ import {
   getUniqueFileName,
   processImage,
 } from "@/lib/image-processing"
-import { getFileKey, validatePngFiles } from "@/lib/image-validation"
+import { getFileKey, validateImageFiles } from "@/lib/image-validation"
 import type {
   ProcessedImage,
   ProcessingConfig,
@@ -91,7 +91,7 @@ export const useImageProcessor = (config: ProcessingConfig) => {
     async (files: File[]) => {
       setOperationError(null)
       const currentImages = imagesRef.current
-      const result = await validatePngFiles(files, {
+      const result = await validateImageFiles(files, {
         existingCount: currentImages.length,
         existingBytes: currentImages.reduce(
           (total, image) => total + image.originalFile.size,
@@ -101,12 +101,13 @@ export const useImageProcessor = (config: ProcessingConfig) => {
       })
       if (!mountedRef.current) return
 
-      const newImages: ProcessedImage[] = result.accepted.map(({ file, width, height }) => ({
+      const newImages: ProcessedImage[] = result.accepted.map(({ file, width, height, mimeType }) => ({
         id: crypto.randomUUID(),
         originalFile: file,
         originalUrl: URL.createObjectURL(file),
         originalWidth: width,
         originalHeight: height,
+        originalMimeType: mimeType,
         status: "pending",
         output: null,
         error: null,
@@ -148,6 +149,7 @@ export const useImageProcessor = (config: ProcessingConfig) => {
         try {
           const result = await processImage({
             sourceUrl: target.originalUrl,
+            sourceMimeType: target.originalMimeType,
             config,
             signal: controller.signal,
           })
@@ -242,7 +244,14 @@ export const useImageProcessor = (config: ProcessingConfig) => {
   const downloadImage = useCallback(
     (image: ProcessedImage) => {
       if (!image.output) return
-      triggerDownload(image.output.url, getOutputFileName(image.originalFile.name, config))
+      triggerDownload(
+        image.output.url,
+        getOutputFileName(
+          image.originalFile.name,
+          config,
+          image.originalMimeType,
+        ),
+      )
     },
     [config],
   )
@@ -261,7 +270,11 @@ export const useImageProcessor = (config: ProcessingConfig) => {
       completedImages.forEach((image) => {
         if (!image.output) return
         const fileName = getUniqueFileName(
-          getOutputFileName(image.originalFile.name, config),
+          getOutputFileName(
+            image.originalFile.name,
+            config,
+            image.originalMimeType,
+          ),
           usedNames,
         )
         zip.file(fileName, image.output.blob)
@@ -269,7 +282,7 @@ export const useImageProcessor = (config: ProcessingConfig) => {
 
       const zipBlob = await zip.generateAsync({ type: "blob" })
       const zipUrl = URL.createObjectURL(zipBlob)
-      triggerDownload(zipUrl, "png_batch_output.zip")
+      triggerDownload(zipUrl, "image_batch_output.zip")
       window.setTimeout(() => URL.revokeObjectURL(zipUrl), 1_000)
     } catch (error) {
       setOperationError(error instanceof Error ? error.message : "打包下载失败")

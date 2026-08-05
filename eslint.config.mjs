@@ -12,6 +12,7 @@ export default defineConfig([
   },
   globalIgnores([
     ".next/**",
+    ".chrome-codex/**",
     ".corepack/**",
     ".tmp/**",
     "node_modules.stale/**",
