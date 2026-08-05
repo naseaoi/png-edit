@@ -35,12 +35,12 @@ export const ImageCard = ({
 }: ImageCardProps) => {
   const previewUrl = image.output?.url ?? image.originalUrl
   const previewLabel = image.output ? "处理结果" : "原图"
-  const resultFitsWidth = image.output
-    ? image.output.width / image.output.height >= 4 / 3
-    : false
-  const previewClassName = image.output
-    ? `result-image-boundary ${resultFitsWidth ? "h-auto w-full" : "h-full w-auto"}`
-    : "h-full w-full object-contain"
+  const previewWidth = image.output?.width ?? image.originalWidth
+  const previewHeight = image.output?.height ?? image.originalHeight
+  const previewFitsWidth = previewWidth / previewHeight >= 4 / 3
+  const previewClassName = `image-boundary ${
+    previewFitsWidth ? "h-auto w-full" : "h-full w-auto"
+  }`
 
   return (
     <article className="image-card">
