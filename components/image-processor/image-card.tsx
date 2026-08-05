@@ -35,6 +35,12 @@ export const ImageCard = ({
 }: ImageCardProps) => {
   const previewUrl = image.output?.url ?? image.originalUrl
   const previewLabel = image.output ? "处理结果" : "原图"
+  const resultFitsWidth = image.output
+    ? image.output.width / image.output.height >= 4 / 3
+    : false
+  const previewClassName = image.output
+    ? `result-image-boundary ${resultFitsWidth ? "h-auto w-full" : "h-full w-auto"}`
+    : "h-full w-full object-contain"
 
   return (
     <article className="image-card">
@@ -48,7 +54,7 @@ export const ImageCard = ({
           <img
             src={previewUrl}
             alt={`${image.originalFile.name} ${previewLabel}`}
-            className="h-full w-full object-contain"
+            className={previewClassName}
           />
         )}
         <div className="image-card-actions">

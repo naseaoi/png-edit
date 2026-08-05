@@ -189,7 +189,13 @@
   }
 
   .image-preview {
-    @apply relative aspect-[4/3] overflow-hidden border-b;
+    @apply relative flex aspect-[4/3] items-center justify-center overflow-hidden border-b;
+  }
+
+  .result-image-boundary {
+    @apply max-h-full max-w-full object-contain;
+    outline: 1px solid #dc2626;
+    outline-offset: -1px;
   }
 
   .image-card-actions {
