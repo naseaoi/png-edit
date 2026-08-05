@@ -125,6 +125,10 @@
     @apply border-primary bg-emerald-50 text-primary;
   }
 
+  .color-swatch[aria-disabled="true"] {
+    @apply pointer-events-none opacity-50;
+  }
+
   .color-swatch > span {
     @apply size-6 rounded-full border border-slate-200;
   }

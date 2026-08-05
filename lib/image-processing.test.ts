@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   getCanvasLayout,
+  getCanvasBackground,
   getOutputDescriptor,
   getOutputFileName,
   getProcessingConfigKey,
@@ -57,6 +58,11 @@ describe("image processing configuration", () => {
     })
   })
 
+  it("does not apply a background to transparent output", () => {
+    expect(getCanvasBackground(createConfig(true))).toBeNull()
+    expect(getCanvasBackground(createConfig(false))).toBe("#00ff00")
+  })
+
   it("changes the key when processing settings change", () => {
     const original = createConfig(false)
     const backgroundChanged = { ...original, backgroundColor: "#ffffff" }
@@ -65,6 +71,10 @@ describe("image processing configuration", () => {
       margin: { ...original.margin, top: original.margin.top + 1 },
     }
     const transparencyChanged = { ...original, transparentBorder: true }
+    const transparentBackgroundChanged = {
+      ...transparencyChanged,
+      backgroundColor: "#ffffff",
+    }
 
     expect(getProcessingConfigKey(original)).not.toBe(
       getProcessingConfigKey(backgroundChanged),
@@ -74,6 +84,9 @@ describe("image processing configuration", () => {
     )
     expect(getProcessingConfigKey(original)).not.toBe(
       getProcessingConfigKey(transparencyChanged),
+    )
+    expect(getProcessingConfigKey(transparencyChanged)).toBe(
+      getProcessingConfigKey(transparentBackgroundChanged),
     )
   })
 })

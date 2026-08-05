@@ -34,7 +34,7 @@ export const normalizeMarginConfig = (margin: MarginConfig): MarginConfig => ({
 export const getProcessingConfigKey = (config: ProcessingConfig) => {
   const margin = normalizeMarginConfig(config.margin)
   return [
-    config.backgroundColor.toUpperCase(),
+    config.transparentBorder ? "TRANSPARENT" : config.backgroundColor.toUpperCase(),
     clampInteger(config.jpegQuality * 100, 1, 100),
     Number(config.transparentBorder),
     margin.top,
@@ -48,6 +48,9 @@ export const getOutputDescriptor = (config: ProcessingConfig) =>
   config.transparentBorder
     ? ({ mimeType: "image/png", extension: "png" } as const)
     : ({ mimeType: "image/jpeg", extension: "jpg" } as const)
+
+export const getCanvasBackground = (config: ProcessingConfig) =>
+  config.transparentBorder ? null : config.backgroundColor
 
 const sanitizeFileName = (name: string) =>
   name
@@ -167,10 +170,9 @@ export const processImage = async ({
   const context = canvas.getContext("2d")
   if (!context) throw new Error("浏览器不支持图片画布")
 
-  context.fillStyle = config.backgroundColor
-  if (config.transparentBorder) {
-    context.fillRect(left, top, image.naturalWidth, image.naturalHeight)
-  } else {
+  const canvasBackground = getCanvasBackground(config)
+  if (canvasBackground) {
+    context.fillStyle = canvasBackground
     context.fillRect(0, 0, width, height)
   }
   context.drawImage(image, left, top)

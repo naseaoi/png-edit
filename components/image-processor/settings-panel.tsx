@@ -54,7 +54,9 @@ export const SettingsPanel = ({
       <div className="settings-heading">
         <div>
           <h2>背景颜色</h2>
-          <p className="font-mono text-xs">{config.backgroundColor.toUpperCase()}</p>
+          <p className={config.transparentBorder ? "" : "font-mono text-xs"}>
+            {config.transparentBorder ? "透明输出时不应用" : config.backgroundColor.toUpperCase()}
+          </p>
         </div>
         <span
           className="color-preview"
@@ -70,7 +72,7 @@ export const SettingsPanel = ({
             className="color-swatch"
             aria-label={color.name}
             aria-pressed={selectedColor === color.value}
-            disabled={disabled}
+            disabled={disabled || config.transparentBorder}
             onClick={() => onPresetColor(color.value)}
           >
             <span style={{ backgroundColor: color.value }} />
@@ -81,13 +83,14 @@ export const SettingsPanel = ({
           className="color-swatch"
           data-active={selectedColor === null}
           aria-label="自定义背景色"
+          aria-disabled={disabled || config.transparentBorder}
         >
           <span style={{ backgroundColor: customColor }} />
           <small>自定义</small>
           <input
             type="color"
             value={customColor}
-            disabled={disabled}
+            disabled={disabled || config.transparentBorder}
             onChange={(event) => onCustomColor(event.currentTarget.value)}
           />
         </label>
