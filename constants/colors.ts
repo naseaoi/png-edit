@@ -1,4 +1,4 @@
-import { BackgroundColor } from "@/types"
+import type { BackgroundColor } from "@/types"
 
 export const PRESET_COLORS: BackgroundColor[] = [
   { name: "标准绿幕", value: "#00FF00", description: "经典绿幕" },

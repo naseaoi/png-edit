@@ -2,10 +2,11 @@ export interface ProcessedImage {
   id: string
   originalFile: File
   originalUrl: string
-  processedUrl: string | null
-  processed: boolean
-  processing: boolean
-  history: Array<{ processedUrl: string | null; processed: boolean; timestamp: number }>
+  originalWidth: number
+  originalHeight: number
+  status: ImageStatus
+  output: ImageOutput | null
+  error: string | null
 }
 
 export interface BackgroundColor {
@@ -20,4 +21,36 @@ export interface BorderConfig {
   bottom: number
   left: number
   right: number
+}
+
+export interface ProcessingConfig {
+  backgroundColor: string
+  border: BorderConfig
+  jpegQuality: number
+}
+
+export type ImageStatus = "pending" | "processing" | "done" | "error"
+
+export type OutputMimeType = "image/jpeg" | "image/png"
+
+export interface ImageOutput {
+  blob: Blob
+  url: string
+  mimeType: OutputMimeType
+  extension: "jpg" | "png"
+  width: number
+  height: number
+  configKey: string
+}
+
+export interface ValidatedImage {
+  file: File
+  width: number
+  height: number
+  key: string
+}
+
+export interface ValidationIssue {
+  fileName: string
+  message: string
 }
