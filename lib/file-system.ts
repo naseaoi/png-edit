@@ -51,20 +51,36 @@ export const collectFilesFromEntry = async (
 
 export const getDroppedFiles = async (dataTransfer: DataTransfer) => {
   const items = Array.from(dataTransfer.items)
-  const entries = items
-    .map((item) => item.webkitGetAsEntry?.())
-    .filter((entry): entry is FileSystemEntry => Boolean(entry))
-
-  if (entries.length === 0) {
-    return Array.from(dataTransfer.files)
-  }
-
   const files: File[] = []
   const state: TraversalState = { files: 0 }
-  for (const entry of entries) {
-    files.push(...(await collectFilesFromEntry(entry, state)))
+
+  for (const item of items) {
+    if (item.kind !== "file") continue
+
+    const fallbackFile = item.getAsFile()
+    let entry: FileSystemEntry | null = null
+
+    try {
+      entry = item.webkitGetAsEntry?.() ?? null
+    } catch {
+      if (fallbackFile) files.push(fallbackFile)
+      continue
+    }
+
+    if (!entry) {
+      if (fallbackFile) files.push(fallbackFile)
+      continue
+    }
+
+    try {
+      files.push(...(await collectFilesFromEntry(entry, state)))
+    } catch (error) {
+      if (!entry.isFile || !fallbackFile) throw error
+      files.push(fallbackFile)
+    }
   }
-  return files
+
+  return files.length > 0 ? files : Array.from(dataTransfer.files)
 }
 import { IMAGE_LIMITS } from "@/constants/limits"
 

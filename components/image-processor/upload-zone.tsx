@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { FolderOpen, ImagePlus, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getDroppedFiles } from "@/lib/file-system"
@@ -16,40 +16,82 @@ export const UploadZone = ({ disabled, onFiles, onError }: UploadZoneProps) => {
   const folderInputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
-  const submitFiles = async (files: File[]) => {
+  const submitFiles = useCallback(async (files: File[]) => {
     if (files.length > 0) await onFiles(files)
-  }
+  }, [onFiles])
+
+  const importDroppedFiles = useCallback(
+    async (dataTransfer: DataTransfer) => {
+      try {
+        await submitFiles(await getDroppedFiles(dataTransfer))
+      } catch (error) {
+        onError(error instanceof Error ? error.message : "无法读取拖入的文件或文件夹")
+      }
+    },
+    [onError, submitFiles],
+  )
+
+  useEffect(() => {
+    let dragDepth = 0
+
+    const isFileDrag = (event: DragEvent) =>
+      Array.from(event.dataTransfer?.types ?? []).includes("Files")
+    const resetDragState = () => {
+      dragDepth = 0
+      setDragging(false)
+    }
+    const handleDragEnter = (event: DragEvent) => {
+      if (!isFileDrag(event)) return
+      event.preventDefault()
+      dragDepth += 1
+      if (!disabled) setDragging(true)
+    }
+    const handleDragOver = (event: DragEvent) => {
+      if (!isFileDrag(event)) return
+      event.preventDefault()
+      if (event.dataTransfer) event.dataTransfer.dropEffect = disabled ? "none" : "copy"
+    }
+    const handleDragLeave = (event: DragEvent) => {
+      if (!isFileDrag(event)) return
+      event.preventDefault()
+      dragDepth = Math.max(0, dragDepth - 1)
+      if (dragDepth === 0) setDragging(false)
+    }
+    const handleDrop = (event: DragEvent) => {
+      if (!isFileDrag(event)) return
+      event.preventDefault()
+      resetDragState()
+      if (!disabled && event.dataTransfer) void importDroppedFiles(event.dataTransfer)
+    }
+
+    window.addEventListener("dragenter", handleDragEnter)
+    window.addEventListener("dragover", handleDragOver)
+    window.addEventListener("dragleave", handleDragLeave)
+    window.addEventListener("drop", handleDrop)
+    window.addEventListener("dragend", resetDragState)
+    window.addEventListener("blur", resetDragState)
+
+    return () => {
+      window.removeEventListener("dragenter", handleDragEnter)
+      window.removeEventListener("dragover", handleDragOver)
+      window.removeEventListener("dragleave", handleDragLeave)
+      window.removeEventListener("drop", handleDrop)
+      window.removeEventListener("dragend", resetDragState)
+      window.removeEventListener("blur", resetDragState)
+    }
+  }, [disabled, importDroppedFiles])
 
   return (
     <section
       aria-label="导入图片"
       className={`upload-zone ${dragging ? "upload-zone-active" : ""}`}
-      onDragEnter={(event) => {
-        event.preventDefault()
-        if (!disabled) setDragging(true)
-      }}
-      onDragLeave={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false)
-      }}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={async (event) => {
-        event.preventDefault()
-        setDragging(false)
-        if (disabled) return
-
-        try {
-          await submitFiles(await getDroppedFiles(event.dataTransfer))
-        } catch {
-          onError("无法读取拖入的文件夹")
-        }
-      }}
     >
       <div className="upload-zone-icon" aria-hidden="true">
         <Upload />
       </div>
       <div className="min-w-0 flex-1">
         <h2 className="font-display text-base font-semibold text-slate-900">导入 PNG</h2>
-        <p className="mt-1 text-sm text-slate-600">拖放图片或文件夹到此处</p>
+        <p className="mt-1 text-sm text-slate-600">拖放图片或文件夹到窗口任意位置</p>
       </div>
       <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
         <Button

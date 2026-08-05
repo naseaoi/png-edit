@@ -77,14 +77,15 @@ export const useImageProcessor = (config: ProcessingConfig) => {
     previousConfigKeyRef.current = configKey
   }, [commitImages, configKey])
 
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    mountedRef.current = true
+
+    return () => {
       mountedRef.current = false
       abortControllerRef.current?.abort()
       imagesRef.current.forEach(revokeImage)
-    },
-    [],
-  )
+    }
+  }, [])
 
   const addFiles = useCallback(
     async (files: File[]) => {
