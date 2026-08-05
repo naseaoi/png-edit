@@ -62,6 +62,56 @@ describe("getDroppedFiles", () => {
     await expect(getDroppedFiles(dataTransfer)).resolves.toEqual([entryFile, directFile])
   })
 
+  it("adds files from the FileList when drag items expose only the first file", async () => {
+    const firstFile = new File(["a"], "first.png")
+    const secondFile = new File(["b"], "second.png")
+    const dataTransfer = createDataTransfer(
+      [
+        {
+          kind: "file",
+          getAsFile: () => firstFile,
+          webkitGetAsEntry: () => createFileEntry(firstFile),
+        },
+      ],
+      [firstFile, secondFile],
+    )
+
+    await expect(getDroppedFiles(dataTransfer)).resolves.toEqual([firstFile, secondFile])
+  })
+
+  it("snapshots all drag sources before reading the first file", async () => {
+    const firstFile = new File(["a"], "first.png")
+    const secondFile = new File(["b"], "second.png")
+    let fileListAvailable = true
+    const firstEntry = {
+      isFile: true,
+      isDirectory: false,
+      file: (resolve: (value: File) => void) => {
+        fileListAvailable = false
+        resolve(firstFile)
+      },
+    } as FileSystemFileEntry
+    const dataTransfer = {
+      items: [
+        {
+          kind: "file",
+          getAsFile: () => firstFile,
+          webkitGetAsEntry: () => firstEntry,
+        },
+        {
+          kind: "file",
+          getAsFile: () => (fileListAvailable ? secondFile : null),
+          webkitGetAsEntry: () => (fileListAvailable ? createFileEntry(secondFile) : null),
+        },
+      ],
+      get files() {
+        return fileListAvailable ? [firstFile, secondFile] : []
+      },
+    } as unknown as DataTransfer
+
+    await expect(getDroppedFiles(dataTransfer)).resolves.toEqual([firstFile, secondFile])
+  })
+
   it("uses the direct file when a file entry cannot be read", async () => {
     const file = new File(["png"], "unreadable-entry.png")
     const dataTransfer = createDataTransfer([
