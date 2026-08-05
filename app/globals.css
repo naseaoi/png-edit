@@ -137,15 +137,15 @@
     @apply absolute inset-0 size-full cursor-pointer opacity-0;
   }
 
-  .border-input-grid {
+  .margin-input-grid {
     @apply grid grid-cols-4 gap-2;
   }
 
-  .border-input-grid label {
+  .margin-input-grid label {
     @apply mb-1 block text-center text-xs text-slate-500;
   }
 
-  .border-input-grid input {
+  .margin-input-grid input {
     @apply px-1 text-center font-mono text-sm;
   }
 

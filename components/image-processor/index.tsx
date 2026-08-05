@@ -39,7 +39,7 @@ export default function ImageProcessor() {
               </div>
               <div className="min-w-0">
                 <h1 className="font-display truncate text-lg font-semibold">PNG 批量处理</h1>
-                <p className="text-xs text-slate-500">背景填充与透明边框</p>
+                <p className="text-xs text-slate-500">背景填充、边距与透明边框</p>
               </div>
             </div>
             <span className="format-chip shrink-0">JPG / PNG</span>
@@ -65,13 +65,13 @@ export default function ImageProcessor() {
                 config={settings.config}
                 selectedColor={settings.selectedColor}
                 customColor={settings.customColor}
-                syncBorder={settings.syncBorder}
+                syncMargin={settings.syncMargin}
                 disabled={processor.processing}
                 onPresetColor={settings.selectPresetColor}
                 onCustomColor={settings.selectCustomColor}
-                onBorderEnabled={settings.setBorderEnabled}
-                onBorderValue={settings.setBorderValue}
-                onToggleBorderSync={settings.toggleBorderSync}
+                onMarginValue={settings.setMarginValue}
+                onTransparentBorder={settings.setTransparentBorder}
+                onToggleMarginSync={settings.toggleMarginSync}
                 onJpegQuality={settings.setJpegQuality}
               />
 

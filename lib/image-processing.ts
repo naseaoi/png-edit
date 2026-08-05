@@ -1,6 +1,6 @@
 import { IMAGE_LIMITS } from "@/constants/limits"
 import type {
-  BorderConfig,
+  MarginConfig,
   OutputMimeType,
   ProcessingConfig,
 } from "@/types"
@@ -24,29 +24,28 @@ const clampInteger = (value: number, min: number, max: number) => {
   return Math.min(max, Math.max(min, Math.round(value)))
 }
 
-export const normalizeBorderConfig = (border: BorderConfig): BorderConfig => ({
-  enabled: Boolean(border.enabled),
-  top: clampInteger(border.top, 0, IMAGE_LIMITS.maxBorder),
-  bottom: clampInteger(border.bottom, 0, IMAGE_LIMITS.maxBorder),
-  left: clampInteger(border.left, 0, IMAGE_LIMITS.maxBorder),
-  right: clampInteger(border.right, 0, IMAGE_LIMITS.maxBorder),
+export const normalizeMarginConfig = (margin: MarginConfig): MarginConfig => ({
+  top: clampInteger(margin.top, 0, IMAGE_LIMITS.maxMargin),
+  bottom: clampInteger(margin.bottom, 0, IMAGE_LIMITS.maxMargin),
+  left: clampInteger(margin.left, 0, IMAGE_LIMITS.maxMargin),
+  right: clampInteger(margin.right, 0, IMAGE_LIMITS.maxMargin),
 })
 
 export const getProcessingConfigKey = (config: ProcessingConfig) => {
-  const border = normalizeBorderConfig(config.border)
+  const margin = normalizeMarginConfig(config.margin)
   return [
     config.backgroundColor.toUpperCase(),
     clampInteger(config.jpegQuality * 100, 1, 100),
-    Number(border.enabled),
-    border.top,
-    border.right,
-    border.bottom,
-    border.left,
+    Number(config.transparentBorder),
+    margin.top,
+    margin.right,
+    margin.bottom,
+    margin.left,
   ].join(":")
 }
 
 export const getOutputDescriptor = (config: ProcessingConfig) =>
-  config.border.enabled
+  config.transparentBorder
     ? ({ mimeType: "image/png", extension: "png" } as const)
     : ({ mimeType: "image/jpeg", extension: "jpg" } as const)
 
@@ -84,6 +83,20 @@ export const getUniqueFileName = (fileName: string, usedNames: Set<string>) => {
 }
 
 const createAbortError = () => new DOMException("处理已取消", "AbortError")
+
+export const getCanvasLayout = (
+  sourceWidth: number,
+  sourceHeight: number,
+  marginConfig: MarginConfig,
+) => {
+  const margin = normalizeMarginConfig(marginConfig)
+  return {
+    width: sourceWidth + margin.left + margin.right,
+    height: sourceHeight + margin.top + margin.bottom,
+    left: margin.left,
+    top: margin.top,
+  }
+}
 
 const loadImage = (sourceUrl: string, signal: AbortSignal) =>
   new Promise<HTMLImageElement>((resolve, reject) => {
@@ -134,20 +147,18 @@ export const processImage = async ({
   if (signal.aborted) throw createAbortError()
 
   const image = await loadImage(sourceUrl, signal)
-  const border = normalizeBorderConfig(config.border)
-  const left = border.enabled ? border.left : 0
-  const right = border.enabled ? border.right : 0
-  const top = border.enabled ? border.top : 0
-  const bottom = border.enabled ? border.bottom : 0
-  const width = image.naturalWidth + left + right
-  const height = image.naturalHeight + top + bottom
+  const { width, height, left, top } = getCanvasLayout(
+    image.naturalWidth,
+    image.naturalHeight,
+    config.margin,
+  )
 
   if (
     width > IMAGE_LIMITS.maxOutputDimension ||
     height > IMAGE_LIMITS.maxOutputDimension ||
     width * height > IMAGE_LIMITS.maxOutputPixels
   ) {
-    throw new Error("添加边框后的图片尺寸超过处理上限")
+    throw new Error("添加边距后的图片尺寸超过处理上限")
   }
 
   const canvas = document.createElement("canvas")
@@ -157,7 +168,11 @@ export const processImage = async ({
   if (!context) throw new Error("浏览器不支持图片画布")
 
   context.fillStyle = config.backgroundColor
-  context.fillRect(left, top, image.naturalWidth, image.naturalHeight)
+  if (config.transparentBorder) {
+    context.fillRect(left, top, image.naturalWidth, image.naturalHeight)
+  } else {
+    context.fillRect(0, 0, width, height)
+  }
   context.drawImage(image, left, top)
 
   if (signal.aborted) throw createAbortError()

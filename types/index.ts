@@ -15,8 +15,7 @@ export interface BackgroundColor {
   description: string
 }
 
-export interface BorderConfig {
-  enabled: boolean
+export interface MarginConfig {
   top: number
   bottom: number
   left: number
@@ -25,7 +24,8 @@ export interface BorderConfig {
 
 export interface ProcessingConfig {
   backgroundColor: string
-  border: BorderConfig
+  margin: MarginConfig
+  transparentBorder: boolean
   jpegQuality: number
 }
 

@@ -1,42 +1,49 @@
 import { describe, expect, it } from "vitest"
 import {
+  getCanvasLayout,
   getOutputDescriptor,
   getOutputFileName,
   getProcessingConfigKey,
   getUniqueFileName,
-  normalizeBorderConfig,
+  normalizeMarginConfig,
 } from "@/lib/image-processing"
 import type { ProcessingConfig } from "@/types"
 
-const createConfig = (borderEnabled: boolean): ProcessingConfig => ({
+const createConfig = (transparentBorder: boolean): ProcessingConfig => ({
   backgroundColor: "#00ff00",
-  border: {
-    enabled: borderEnabled,
+  margin: {
     top: 10,
     right: 20,
     bottom: 30,
     left: 40,
   },
+  transparentBorder,
   jpegQuality: 0.9,
 })
 
 describe("image processing configuration", () => {
-  it("clamps unsafe border values", () => {
+  it("clamps unsafe margin values", () => {
     expect(
-      normalizeBorderConfig({
-        enabled: true,
+      normalizeMarginConfig({
         top: -10,
         right: Number.POSITIVE_INFINITY,
         bottom: 9999,
         left: 12.6,
       }),
     ).toEqual({
-      enabled: true,
       top: 0,
       right: 0,
       bottom: 500,
       left: 13,
     })
+  })
+
+  it("applies margins independently from transparent borders", () => {
+    const opaqueLayout = getCanvasLayout(100, 50, createConfig(false).margin)
+    const transparentLayout = getCanvasLayout(100, 50, createConfig(true).margin)
+
+    expect(opaqueLayout).toEqual({ width: 160, height: 90, left: 40, top: 10 })
+    expect(transparentLayout).toEqual(opaqueLayout)
   })
 
   it("uses PNG only when transparent borders are enabled", () => {
@@ -52,8 +59,22 @@ describe("image processing configuration", () => {
 
   it("changes the key when processing settings change", () => {
     const original = createConfig(false)
-    const changed = { ...original, backgroundColor: "#ffffff" }
-    expect(getProcessingConfigKey(original)).not.toBe(getProcessingConfigKey(changed))
+    const backgroundChanged = { ...original, backgroundColor: "#ffffff" }
+    const marginChanged = {
+      ...original,
+      margin: { ...original.margin, top: original.margin.top + 1 },
+    }
+    const transparencyChanged = { ...original, transparentBorder: true }
+
+    expect(getProcessingConfigKey(original)).not.toBe(
+      getProcessingConfigKey(backgroundChanged),
+    )
+    expect(getProcessingConfigKey(original)).not.toBe(
+      getProcessingConfigKey(marginChanged),
+    )
+    expect(getProcessingConfigKey(original)).not.toBe(
+      getProcessingConfigKey(transparencyChanged),
+    )
   })
 })
 

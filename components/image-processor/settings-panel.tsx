@@ -10,25 +10,26 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { PRESET_COLORS } from "@/constants/colors"
-import type { BorderConfig, ProcessingConfig } from "@/types"
+import { IMAGE_LIMITS } from "@/constants/limits"
+import type { MarginConfig, ProcessingConfig } from "@/types"
 
-type BorderField = keyof Omit<BorderConfig, "enabled">
+type MarginField = keyof MarginConfig
 
 interface SettingsPanelProps {
   config: ProcessingConfig
   selectedColor: string | null
   customColor: string
-  syncBorder: boolean
+  syncMargin: boolean
   disabled: boolean
   onPresetColor: (color: string) => void
   onCustomColor: (color: string) => void
-  onBorderEnabled: (enabled: boolean) => void
-  onBorderValue: (field: BorderField, value: number) => void
-  onToggleBorderSync: () => void
+  onMarginValue: (field: MarginField, value: number) => void
+  onTransparentBorder: (enabled: boolean) => void
+  onToggleMarginSync: () => void
   onJpegQuality: (quality: number) => void
 }
 
-const BORDER_FIELDS: Array<{ field: BorderField; label: string }> = [
+const MARGIN_FIELDS: Array<{ field: MarginField; label: string }> = [
   { field: "top", label: "上" },
   { field: "right", label: "右" },
   { field: "bottom", label: "下" },
@@ -39,13 +40,13 @@ export const SettingsPanel = ({
   config,
   selectedColor,
   customColor,
-  syncBorder,
+  syncMargin,
   disabled,
   onPresetColor,
   onCustomColor,
-  onBorderEnabled,
-  onBorderValue,
-  onToggleBorderSync,
+  onMarginValue,
+  onTransparentBorder,
+  onToggleMarginSync,
   onJpegQuality,
 }: SettingsPanelProps) => (
   <aside className="settings-panel" aria-label="处理参数">
@@ -96,72 +97,77 @@ export const SettingsPanel = ({
     <div className="settings-section">
       <div className="settings-heading">
         <div>
-          <h2>透明边框</h2>
-          <p>{config.border.enabled ? "PNG 输出" : "JPG 输出"}</p>
+          <h2>边距</h2>
+          <p>{syncMargin ? "四边同步" : "四边独立"}</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="border-enabled" className="sr-only">
-            透明边框
-          </Label>
-          <Switch
-            id="border-enabled"
-            checked={config.border.enabled}
-            disabled={disabled}
-            onCheckedChange={onBorderEnabled}
-          />
-        </div>
-      </div>
-
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-600">边距 px</span>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               type="button"
               size="icon"
-              variant={syncBorder ? "secondary" : "ghost"}
-              aria-label={syncBorder ? "取消同步四边" : "同步四边"}
-              aria-pressed={syncBorder}
-              disabled={disabled || !config.border.enabled}
-              onClick={onToggleBorderSync}
+              variant={syncMargin ? "secondary" : "ghost"}
+              aria-label={syncMargin ? "取消同步四边" : "同步四边"}
+              aria-pressed={syncMargin}
+              disabled={disabled}
+              onClick={onToggleMarginSync}
             >
-              {syncBorder ? <Link2 /> : <Unlink2 />}
+              {syncMargin ? <Link2 /> : <Unlink2 />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>{syncBorder ? "取消同步四边" : "同步四边"}</TooltipContent>
+          <TooltipContent>{syncMargin ? "取消同步四边" : "同步四边"}</TooltipContent>
         </Tooltip>
       </div>
 
-      <div className="border-input-grid">
-        {BORDER_FIELDS.map(({ field, label }) => (
+      <div className="margin-input-grid">
+        {MARGIN_FIELDS.map(({ field, label }) => (
           <div key={field}>
-            <Label htmlFor={`border-${field}`}>{label}</Label>
+            <Label htmlFor={`margin-${field}`}>{label}</Label>
             <Input
-              id={`border-${field}`}
+              id={`margin-${field}`}
               type="number"
               inputMode="numeric"
               min={0}
-              max={500}
-              value={config.border[field]}
-              disabled={disabled || !config.border.enabled || (syncBorder && field !== "top")}
-              onChange={(event) => onBorderValue(field, Number(event.currentTarget.value))}
+              max={IMAGE_LIMITS.maxMargin}
+              value={config.margin[field]}
+              disabled={disabled || (syncMargin && field !== "top")}
+              onChange={(event) => onMarginValue(field, Number(event.currentTarget.value))}
             />
           </div>
         ))}
       </div>
 
-      {syncBorder && config.border.enabled && (
+      {syncMargin && (
         <Slider
           className="mt-4"
           aria-label="统一边距"
           min={0}
-          max={500}
+          max={IMAGE_LIMITS.maxMargin}
           step={1}
-          value={[config.border.top]}
+          value={[config.margin.top]}
           disabled={disabled}
-          onValueChange={([value]) => onBorderValue("top", value)}
+          onValueChange={([value]) => onMarginValue("top", value)}
         />
       )}
+    </div>
+
+    <div className="settings-section">
+      <div className="settings-heading mb-0">
+        <div>
+          <h2>透明边框</h2>
+          <p>{config.transparentBorder ? "开启 · PNG 输出" : "关闭 · JPG 输出"}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Label htmlFor="transparent-border" className="sr-only">
+            透明边框
+          </Label>
+          <Switch
+            id="transparent-border"
+            checked={config.transparentBorder}
+            disabled={disabled}
+            onCheckedChange={onTransparentBorder}
+          />
+        </div>
+      </div>
     </div>
 
     <div className="settings-section">
@@ -177,7 +183,7 @@ export const SettingsPanel = ({
         max={100}
         step={1}
         value={[Math.round(config.jpegQuality * 100)]}
-        disabled={disabled || config.border.enabled}
+        disabled={disabled || config.transparentBorder}
         onValueChange={([value]) => onJpegQuality(value / 100)}
       />
     </div>

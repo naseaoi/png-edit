@@ -1,11 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { normalizeBorderConfig } from "@/lib/image-processing"
-import type { BorderConfig, ProcessingConfig } from "@/types"
+import { normalizeMarginConfig } from "@/lib/image-processing"
+import type { MarginConfig, ProcessingConfig } from "@/types"
 
-const DEFAULT_BORDER: BorderConfig = {
-  enabled: false,
+const DEFAULT_MARGIN: MarginConfig = {
   top: 0,
   right: 0,
   bottom: 0,
@@ -15,18 +14,20 @@ const DEFAULT_BORDER: BorderConfig = {
 export const useProcessingSettings = () => {
   const [selectedColor, setSelectedColor] = useState<string | null>("#00FF00")
   const [customColor, setCustomColor] = useState("#00FF00")
-  const [border, setBorder] = useState(DEFAULT_BORDER)
-  const [syncBorder, setSyncBorder] = useState(false)
+  const [margin, setMargin] = useState(DEFAULT_MARGIN)
+  const [transparentBorder, setTransparentBorder] = useState(false)
+  const [syncMargin, setSyncMargin] = useState(false)
   const [jpegQuality, setJpegQuality] = useState(0.9)
   const backgroundColor = selectedColor ?? customColor
 
   const config = useMemo<ProcessingConfig>(
     () => ({
       backgroundColor,
-      border,
+      margin,
+      transparentBorder,
       jpegQuality,
     }),
-    [backgroundColor, border, jpegQuality],
+    [backgroundColor, jpegQuality, margin, transparentBorder],
   )
 
   const selectPresetColor = (color: string) => {
@@ -38,14 +39,10 @@ export const useProcessingSettings = () => {
     setSelectedColor(null)
   }
 
-  const setBorderEnabled = (enabled: boolean) => {
-    setBorder((current) => ({ ...current, enabled }))
-  }
-
-  const setBorderValue = (field: keyof Omit<BorderConfig, "enabled">, value: number) => {
-    setBorder((current) => {
-      if (syncBorder) {
-        return normalizeBorderConfig({
+  const setMarginValue = (field: keyof MarginConfig, value: number) => {
+    setMargin((current) => {
+      if (syncMargin) {
+        return normalizeMarginConfig({
           ...current,
           top: value,
           right: value,
@@ -53,19 +50,19 @@ export const useProcessingSettings = () => {
           left: value,
         })
       }
-      return normalizeBorderConfig({ ...current, [field]: value })
+      return normalizeMarginConfig({ ...current, [field]: value })
     })
   }
 
-  const toggleBorderSync = () => {
-    setSyncBorder((current) => {
+  const toggleMarginSync = () => {
+    setSyncMargin((current) => {
       const next = !current
       if (next) {
-        setBorder((borderValue) => ({
-          ...borderValue,
-          right: borderValue.top,
-          bottom: borderValue.top,
-          left: borderValue.top,
+        setMargin((marginValue) => ({
+          ...marginValue,
+          right: marginValue.top,
+          bottom: marginValue.top,
+          left: marginValue.top,
         }))
       }
       return next
@@ -76,12 +73,12 @@ export const useProcessingSettings = () => {
     config,
     selectedColor,
     customColor,
-    syncBorder,
+    syncMargin,
     selectPresetColor,
     selectCustomColor,
-    setBorderEnabled,
-    setBorderValue,
-    toggleBorderSync,
+    setMarginValue,
+    setTransparentBorder,
+    toggleMarginSync,
     setJpegQuality,
   }
 }

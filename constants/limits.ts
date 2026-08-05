@@ -8,5 +8,5 @@ export const IMAGE_LIMITS = {
   maxSourcePixels: 40_000_000,
   maxOutputDimension: 16_384,
   maxOutputPixels: 40_000_000,
-  maxBorder: 500,
+  maxMargin: 500,
 } as const
