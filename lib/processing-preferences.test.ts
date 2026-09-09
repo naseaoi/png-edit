@@ -26,6 +26,7 @@ describe("module preferences", () => {
       margin: true,
       transparency: false,
       compression: true,
+      moduleOrder: DEFAULT_MODULE_PREFERENCES.moduleOrder,
     })
   })
 
@@ -46,9 +47,44 @@ describe("module preferences", () => {
       margin: false,
       transparency: false,
       compression: false,
+      moduleOrder: DEFAULT_MODULE_PREFERENCES.moduleOrder,
     })
     expect(parseModulePreferences("not-json")).toEqual(
       DEFAULT_MODULE_PREFERENCES,
     )
+  })
+
+  it("restores a valid custom module order", () => {
+    expect(
+      parseModulePreferences(
+        JSON.stringify({
+          moduleOrder: [
+            "margin",
+            "resize",
+            "background",
+            "compression",
+            "transparency",
+          ],
+        }),
+      ).moduleOrder,
+    ).toEqual([
+      "margin",
+      "resize",
+      "background",
+      "compression",
+      "transparency",
+    ])
+  })
+
+  it("falls back to the default order for corrupted module order", () => {
+    expect(
+      parseModulePreferences(
+        JSON.stringify({ moduleOrder: ["margin", "resize"] }),
+      ).moduleOrder,
+    ).toEqual(DEFAULT_MODULE_PREFERENCES.moduleOrder)
+    expect(
+      parseModulePreferences(JSON.stringify({ moduleOrder: "margin" }))
+        .moduleOrder,
+    ).toEqual(DEFAULT_MODULE_PREFERENCES.moduleOrder)
   })
 })

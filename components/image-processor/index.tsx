@@ -73,6 +73,8 @@ export default function ImageProcessor() {
                 customColor={settings.customColor}
                 syncMargin={settings.syncMargin}
                 disabled={processor.processing}
+                moduleOrder={settings.config.moduleOrder}
+                onModuleOrder={settings.setModuleOrder}
                 onBackgroundEnabled={settings.setBackgroundEnabled}
                 onPresetColor={settings.selectPresetColor}
                 onCustomColor={settings.selectCustomColor}

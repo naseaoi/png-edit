@@ -91,6 +91,30 @@
     @apply overflow-hidden rounded-md border bg-white lg:sticky lg:top-20;
   }
 
+  .settings-draggable {
+    @apply relative;
+  }
+
+  .settings-draggable[draggable="true"] {
+    -webkit-user-drag: element;
+  }
+
+  .settings-draggable[data-drop-before="true"] {
+    box-shadow: inset 0 2px 0 #000000;
+  }
+
+  .settings-draggable[data-drop-after="true"] {
+    box-shadow: inset 0 -2px 0 #000000;
+  }
+
+  .settings-draggable[data-dragging="true"] {
+    @apply opacity-40;
+  }
+
+  .drag-handle {
+    @apply absolute left-0.5 top-4 z-10 flex size-6 cursor-grab items-center justify-center rounded-sm border-0 bg-transparent p-0 text-neutral-400 transition-colors hover:text-neutral-900 focus-visible:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing;
+  }
+
   .settings-section {
     @apply border-b bg-neutral-50/60 p-4 last:border-b-0;
   }

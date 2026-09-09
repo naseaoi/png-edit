@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  DEFAULT_MODULE_ORDER,
   getCanvasBackground,
   getCanvasLayout,
   getOutputDescriptor,
@@ -9,6 +10,7 @@ import {
   getResizedDimensions,
   getUniqueFileName,
   normalizeMarginConfig,
+  normalizeModuleOrder,
   normalizeResizeConfig,
 } from "@/lib/image-processing"
 import type { ProcessingConfig } from "@/types"
@@ -38,6 +40,7 @@ const createConfig = (): ProcessingConfig => ({
     enabled: true,
     quality: 90,
   },
+  moduleOrder: DEFAULT_MODULE_ORDER,
 })
 
 describe("image processing configuration", () => {
@@ -162,6 +165,41 @@ describe("image processing configuration", () => {
         compression: { ...original.compression, quality: 80 },
       }),
     )
+  })
+
+  it("changes the key when the module order changes", () => {
+    const original = createConfig()
+    expect(getProcessingConfigKey(original)).not.toBe(
+      getProcessingConfigKey({
+        ...original,
+        moduleOrder: [
+          "resize",
+          "background",
+          "margin",
+          "transparency",
+          "compression",
+        ],
+      }),
+    )
+  })
+})
+
+describe("module order normalization", () => {
+  it("keeps a valid custom order", () => {
+    expect(
+      normalizeModuleOrder(["margin", "resize", "background", "compression", "transparency"]),
+    ).toEqual(["margin", "resize", "background", "compression", "transparency"])
+  })
+
+  it("drops unknown modules and fills missing ones with defaults", () => {
+    expect(
+      normalizeModuleOrder(["margin", "resize", "hacker", "background"]),
+    ).toEqual(DEFAULT_MODULE_ORDER)
+  })
+
+  it("falls back to the default order for non-array input", () => {
+    expect(normalizeModuleOrder(undefined)).toEqual(DEFAULT_MODULE_ORDER)
+    expect(normalizeModuleOrder("background")).toEqual(DEFAULT_MODULE_ORDER)
   })
 })
 

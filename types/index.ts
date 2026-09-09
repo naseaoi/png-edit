@@ -45,12 +45,20 @@ export interface ResizeConfig {
   preserveAspectRatio: boolean
 }
 
+export type ProcessingModule =
+  | "background"
+  | "resize"
+  | "margin"
+  | "transparency"
+  | "compression"
+
 export interface ProcessingConfig {
   background: BackgroundConfig
   margin: MarginConfig
   transparentBorder: boolean
   resize: ResizeConfig
   compression: CompressionConfig
+  moduleOrder: ProcessingModule[]
 }
 
 export type ImageStatus = "pending" | "processing" | "done" | "error"

@@ -6,9 +6,20 @@ import {
   parseModulePreferences,
   type ModulePreferences,
 } from "@/lib/processing-preferences"
+import type { ProcessingModule } from "@/types"
 
 const PREFERENCES_EVENT = "png-edit:module-preferences"
 let fallbackPreferences: string | null | undefined
+
+const persistPreferences = (nextValue: string) => {
+  fallbackPreferences = nextValue
+  try {
+    window.localStorage.setItem(MODULE_PREFERENCES_KEY, nextValue)
+  } catch {
+    // 本地偏好写入失败
+  }
+  window.dispatchEvent(new Event(PREFERENCES_EVENT))
+}
 
 const readPreferences = () => {
   if (fallbackPreferences !== undefined) return fallbackPreferences
@@ -42,21 +53,23 @@ export const useModulePreferences = () => {
   )
 
   const setModuleEnabled = useCallback(
-    (module: keyof ModulePreferences, enabled: boolean) => {
-      const nextValue = JSON.stringify({
+    (module: Exclude<keyof ModulePreferences, "moduleOrder">, enabled: boolean) => {
+      const next = {
         ...parseModulePreferences(readPreferences()),
         [module]: enabled,
-      })
-      fallbackPreferences = nextValue
-      try {
-        window.localStorage.setItem(MODULE_PREFERENCES_KEY, nextValue)
-      } catch {
-        // 本地偏好写入失败
       }
-      window.dispatchEvent(new Event(PREFERENCES_EVENT))
+      persistPreferences(JSON.stringify(next))
     },
     [],
   )
 
-  return { preferences, setModuleEnabled }
+  const setModuleOrder = useCallback((order: ProcessingModule[]) => {
+    const next = {
+      ...parseModulePreferences(readPreferences()),
+      moduleOrder: order,
+    }
+    persistPreferences(JSON.stringify(next))
+  }, [])
+
+  return { preferences, setModuleEnabled, setModuleOrder }
 }

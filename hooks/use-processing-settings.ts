@@ -36,7 +36,7 @@ const DEFAULT_RESIZE: ResizeConfig = {
 }
 
 export const useProcessingSettings = () => {
-  const { preferences, setModuleEnabled } = useModulePreferences()
+  const { preferences, setModuleEnabled, setModuleOrder } = useModulePreferences()
   const [selectedColor, setSelectedColor] = useState<string | null>("#00FF00")
   const [customColor, setCustomColor] = useState("#00FF00")
   const [margin, setMargin] = useState(DEFAULT_MARGIN)
@@ -55,6 +55,7 @@ export const useProcessingSettings = () => {
       transparentBorder: preferences.transparency,
       resize: { ...resize, enabled: preferences.resize },
       compression: { ...compression, enabled: preferences.compression },
+      moduleOrder: preferences.moduleOrder,
     }),
     [backgroundColor, compression, margin, preferences, resize],
   )
@@ -141,5 +142,6 @@ export const useProcessingSettings = () => {
     toggleMarginSync,
     setResizeValue,
     setCompressionValue,
+    setModuleOrder,
   }
 }

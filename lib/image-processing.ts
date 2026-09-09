@@ -4,6 +4,7 @@ import type {
   MarginConfig,
   OutputMimeType,
   ProcessingConfig,
+  ProcessingModule,
   ResizeConfig,
   SupportedImageMimeType,
 } from "@/types"
@@ -23,6 +24,35 @@ interface ProcessImageResult {
   width: number
   height: number
 }
+
+export const DEFAULT_MODULE_ORDER: ProcessingModule[] = [
+  "background",
+  "resize",
+  "margin",
+  "transparency",
+  "compression",
+]
+
+export const normalizeModuleOrder = (order: unknown): ProcessingModule[] => {
+  if (!Array.isArray(order)) return DEFAULT_MODULE_ORDER
+  const seen = new Set<ProcessingModule>()
+  const filtered: ProcessingModule[] = []
+  order.forEach((module) => {
+    if (
+      typeof module === "string" &&
+      DEFAULT_MODULE_ORDER.includes(module as ProcessingModule) &&
+      !seen.has(module as ProcessingModule)
+    ) {
+      seen.add(module as ProcessingModule)
+      filtered.push(module as ProcessingModule)
+    }
+  })
+  if (filtered.length !== DEFAULT_MODULE_ORDER.length) return DEFAULT_MODULE_ORDER
+  return filtered
+}
+
+const moduleOrderKey = (config: ProcessingConfig) =>
+  normalizeModuleOrder(config.moduleOrder).join(">")
 
 const clampInteger = (value: number, min: number, max: number) => {
   if (!Number.isFinite(value)) return min
@@ -102,6 +132,7 @@ export const getProcessingConfigKey = (config: ProcessingConfig) => {
     ...marginKey,
     ...resizeKey,
     ...compressionKey,
+    moduleOrderKey(config),
   ].join(":")
 }
 
@@ -251,39 +282,61 @@ export const processImage = async ({
   if (signal.aborted) throw createAbortError()
 
   const image = await loadImage(sourceUrl, signal)
-  const resized = getResizedDimensions(
-    image.naturalWidth,
-    image.naturalHeight,
-    config.resize,
-  )
-  const { width, height, left, top } = getCanvasLayout(
-    resized.width,
-    resized.height,
-    config.margin,
-  )
+  const order = normalizeModuleOrder(config.moduleOrder)
+
+  let imageWidth = image.naturalWidth
+  let imageHeight = image.naturalHeight
+  let canvasWidth = imageWidth
+  let canvasHeight = imageHeight
+  let offsetX = 0
+  let offsetY = 0
+  let background: string | null = null
+
+  for (const step of order) {
+    if (step === "resize") {
+      const resized = getResizedDimensions(canvasWidth, canvasHeight, config.resize)
+      const ratioX = resized.width / canvasWidth
+      const ratioY = resized.height / canvasHeight
+      imageWidth *= ratioX
+      imageHeight *= ratioY
+      offsetX *= ratioX
+      offsetY *= ratioY
+      canvasWidth = resized.width
+      canvasHeight = resized.height
+    } else if (step === "margin") {
+      const layout = getCanvasLayout(canvasWidth, canvasHeight, config.margin)
+      offsetX += layout.left
+      offsetY += layout.top
+      canvasWidth = layout.width
+      canvasHeight = layout.height
+    } else if (step === "background") {
+      background = getCanvasBackground(config)
+    }
+  }
+  const drawWidth = canvasWidth
+  const drawHeight = canvasHeight
 
   if (
-    width > IMAGE_LIMITS.maxOutputDimension ||
-    height > IMAGE_LIMITS.maxOutputDimension ||
-    width * height > IMAGE_LIMITS.maxOutputPixels
+    drawWidth > IMAGE_LIMITS.maxOutputDimension ||
+    drawHeight > IMAGE_LIMITS.maxOutputDimension ||
+    drawWidth * drawHeight > IMAGE_LIMITS.maxOutputPixels
   ) {
     throw new Error("添加边距后的图片尺寸超过处理上限")
   }
 
   const canvas = document.createElement("canvas")
-  canvas.width = width
-  canvas.height = height
+  canvas.width = drawWidth
+  canvas.height = drawHeight
   const context = canvas.getContext("2d")
   if (!context) throw new Error("浏览器不支持图片画布")
 
-  const canvasBackground = getCanvasBackground(config)
-  if (canvasBackground) {
-    context.fillStyle = canvasBackground
-    context.fillRect(0, 0, width, height)
+  if (background) {
+    context.fillStyle = background
+    context.fillRect(0, 0, drawWidth, drawHeight)
   }
   context.imageSmoothingEnabled = true
   context.imageSmoothingQuality = "high"
-  context.drawImage(image, left, top, resized.width, resized.height)
+  context.drawImage(image, offsetX, offsetY, imageWidth, imageHeight)
 
   if (signal.aborted) throw createAbortError()
 
@@ -298,15 +351,15 @@ export const processImage = async ({
   )
 
   if (descriptor.mimeType === "image/png" && config.compression.enabled) {
-    const imageData = context.getImageData(0, 0, width, height)
+    const imageData = context.getImageData(0, 0, drawWidth, drawHeight)
     const colorCount = getPngColorCount(config.compression.quality)
     const hasTransparency = imageData.data.some(
       (value, index) => index % 4 === 3 && value !== 255,
     )
     const compressedBlob = encodeRgbaToPng(
       imageData.data,
-      width,
-      height,
+      drawWidth,
+      drawHeight,
       colorCount,
       colorCount === 0 || hasTransparency,
     )
@@ -314,5 +367,5 @@ export const processImage = async ({
   }
 
   if (signal.aborted) throw createAbortError()
-  return { blob, ...descriptor, width, height }
+  return { blob, ...descriptor, width: drawWidth, height: drawHeight }
 }
