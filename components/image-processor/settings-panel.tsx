@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import type { ReactNode } from "react"
 import { GripVertical } from "lucide-react"
 import { insertModule, moveModuleOrder } from "@/lib/module-order"
@@ -118,6 +118,29 @@ const getDropPosition = (clientY: number, element: HTMLElement): DropPosition =>
     ? "before"
     : "after"
 
+const getBoundaryDropTarget = (
+  clientX: number,
+  clientY: number,
+  panel: HTMLElement,
+  moduleOrder: ProcessingModule[],
+): { module: ProcessingModule; position: DropPosition } | null => {
+  const sections = panel.querySelectorAll<HTMLElement>(".settings-draggable")
+  const firstSection = sections[0]
+  const lastSection = sections[sections.length - 1]
+  if (!firstSection || !lastSection) return null
+
+  const panelRect = panel.getBoundingClientRect()
+  if (clientX < panelRect.left || clientX > panelRect.right) return null
+
+  if (clientY < firstSection.getBoundingClientRect().top) {
+    return { module: moduleOrder[0], position: "before" }
+  }
+  if (clientY > lastSection.getBoundingClientRect().bottom) {
+    return { module: moduleOrder[moduleOrder.length - 1], position: "after" }
+  }
+  return null
+}
+
 const INTERACTIVE_SELECTOR =
   "button, input, select, textarea, a, [role='switch'], [role='slider']"
 
@@ -215,16 +238,70 @@ export const SettingsPanel = ({
     module: ProcessingModule
     position: DropPosition
   } | null>(null)
+  const panelRef = useRef<HTMLElement>(null)
 
-  const commitDrop = () => {
-    if (dragging && dropTarget && dragging !== dropTarget.module) {
-      onModuleOrder(
-        insertModule(moduleOrder, dragging, dropTarget.module, dropTarget.position),
+  const commitDrop = useCallback(
+    (target: { module: ProcessingModule; position: DropPosition } | null) => {
+      if (dragging && target && dragging !== target.module) {
+        onModuleOrder(
+          insertModule(moduleOrder, dragging, target.module, target.position),
+        )
+      }
+      setDragging(null)
+      setDropTarget(null)
+    },
+    [dragging, moduleOrder, onModuleOrder],
+  )
+
+  useEffect(() => {
+    if (!dragging) return
+
+    const handleDocumentDragOver = (event: DragEvent) => {
+      const panel = panelRef.current
+      const target = event.target
+      if (
+        !panel ||
+        (target instanceof Element && target.closest(".settings-draggable"))
+      ) {
+        return
+      }
+
+      const boundaryTarget = getBoundaryDropTarget(
+        event.clientX,
+        event.clientY,
+        panel,
+        moduleOrder,
       )
+      if (!boundaryTarget) return
+
+      event.preventDefault()
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "move"
+      setDropTarget(boundaryTarget)
     }
-    setDragging(null)
-    setDropTarget(null)
-  }
+
+    const handleDocumentDrop = (event: DragEvent) => {
+      const panel = panelRef.current
+      if (!panel) return
+
+      const boundaryTarget = getBoundaryDropTarget(
+        event.clientX,
+        event.clientY,
+        panel,
+        moduleOrder,
+      )
+      if (!boundaryTarget) return
+
+      event.preventDefault()
+      commitDrop(boundaryTarget)
+    }
+
+    document.addEventListener("dragover", handleDocumentDragOver)
+    document.addEventListener("drop", handleDocumentDrop)
+    return () => {
+      document.removeEventListener("dragover", handleDocumentDragOver)
+      document.removeEventListener("drop", handleDocumentDrop)
+    }
+  }, [commitDrop, dragging, moduleOrder])
 
   const panel = {
     config,
@@ -244,7 +321,7 @@ export const SettingsPanel = ({
   }
 
   return (
-    <aside className="settings-panel" aria-label="处理参数">
+    <aside ref={panelRef} className="settings-panel" aria-label="处理参数">
       {moduleOrder.map((module, index) => (
         <DraggableSection
           key={module}
@@ -258,7 +335,7 @@ export const SettingsPanel = ({
           onDragOver={(target, position) =>
             setDropTarget({ module: target, position })
           }
-          onDrop={commitDrop}
+          onDrop={() => commitDrop(dropTarget)}
           onDragEnd={() => {
             setDragging(null)
             setDropTarget(null)

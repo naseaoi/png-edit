@@ -111,12 +111,16 @@
     @apply opacity-40;
   }
 
+  .settings-draggable + .settings-draggable {
+    @apply border-t border-border;
+  }
+
   .drag-handle {
-    @apply absolute left-0.5 top-4 z-10 flex size-6 cursor-grab items-center justify-center rounded-sm border-0 bg-transparent p-0 text-neutral-400 transition-colors hover:text-neutral-900 focus-visible:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing;
+    @apply absolute left-0.5 top-1/2 z-10 flex size-6 -translate-y-1/2 cursor-grab items-center justify-center rounded-sm border-0 bg-transparent p-0 text-neutral-400 transition-colors hover:text-neutral-900 focus-visible:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing;
   }
 
   .settings-section {
-    @apply border-b bg-neutral-50/60 p-4 last:border-b-0;
+    @apply bg-neutral-50/60 py-4 pl-11 pr-4;
   }
 
   .settings-section[data-enabled="true"] {
